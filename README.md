@@ -2,45 +2,89 @@
 
 Recursive funding for the software commons.
 
-THANK is an open-source protocol and toolchain for funding the software, tools, and public goods that modern projects depend on. Most software funding is one-hop: a donor funds the project they can see. THANK makes funding recursive by letting projects publish a `thank.yaml` manifest, scan dependency graphs, route support to verified upstream projects, and publish transparent receipts.
+THANK is an open-source protocol and local-first toolchain for funding the software that modern projects depend on. A project publishes a `thank.yaml` manifest, donors scan a dependency tree, verified upstream projects are resolved, and funds can be routed through auditable split rules.
 
-THANK is experimental public-goods infrastructure. It is not an investment product. The maintainers do not promise profit, appreciation, exchange listings, liquidity, governance rights, or future tokens.
+The goal is practical public-goods funding, not speculation.
 
-## What Is Included
+THANK is experimental infrastructure. It is not an investment product. Donations do not buy tokens, equity, governance power, special access, future allocations, or any expectation of financial return.
 
-- A TypeScript CLI: `thank init`, `thank validate`, `thank scan`, `thank graph`, `thank fund`, `thank badge`, and `thank verify`
-- Multi-ecosystem dependency scanner for npm, PyPI, Cargo, Go modules, Composer, RubyGems, Maven, NuGet, Docker, and GitHub Actions
+## Why THANK Exists
+
+Open-source funding is usually one-hop: a donor funds the project they can see.
+
+Real software is recursive. A web app depends on packages, frameworks, runtimes, build tools, test tools, CI actions, cryptography libraries, and maintainers several layers upstream. THANK makes that dependency graph fundable.
+
+The core workflow is:
+
+1. A project publishes a `thank.yaml` funding manifest.
+2. Maintainers verify ownership through GitHub and stronger proofs over time.
+3. A donor or company scans a repository.
+4. THANK resolves dependencies with verified funding metadata.
+5. A funding plan aggregates allocations by verified upstream project.
+6. Onchain contracts route funds into claimable recipient credits.
+7. Receipts provide a public audit trail.
+
+## What Is In This Repository
+
+- TypeScript CLI for manifests, scanning, funding plans, receipts, and commitments
+- Multi-ecosystem dependency scanner
 - Static verified project registry
-- Local React dashboard over generated scan data for development demos only
-- Solidity starter contracts for project registration, split registration, payment routing, symbolic receipts, and treasury custody
-- Manifest spec, protocol principles, contributor policy, and security policy
+- Solidity contracts for project registration, split registration, routing, receipts, and treasury custody
+- In-process EVM behavior tests for protocol routing and claims
+- Protocol specification, threat model, manifest spec, security policy, and examples
 
-## Quick Start
+The local website/dashboard prototype is intentionally excluded from the protocol repo. The protocol surface is the manifest, CLI, registry, contracts, and tests.
+
+## Current Status
+
+Phase 0/1 protocol MVP.
+
+The CLI, manifest commitments, scanner, registry, and contracts are local-first. The contracts compile and have EVM behavior tests, but they have not been audited. Do not use these contracts with production funds until they have had external review, testnet proving, and a deployment policy.
+
+## Install
 
 ```bash
 npm install
-npm run build:cli
-node dist/src/cli.js validate examples/thank.yaml
-node dist/src/cli.js commit examples/thank.yaml
-node dist/src/cli.js graph examples/sample-project --amount 1000 --currency USDC
+npm run build
 ```
 
-Compile the protocol contracts:
+Run the full verification suite:
 
 ```bash
-npm run compile:contracts
+npm run typecheck
+npm test
+npm audit
 ```
 
-After installing the package globally, the same commands are available as `thank`. The web dashboard exists only as a local visualization aid; it is not the protocol surface.
+## CLI
 
-## Core Workflow
+After `npm run build:cli`, use the CLI through `node dist/src/cli.js`. If installed globally, the binary is `thank`.
 
-1. A project publishes a `thank.yaml` manifest.
-2. Maintainers verify ownership through GitHub and stronger proofs over time.
-3. Donors or companies scan a repository dependency tree.
-4. THANK identifies dependencies with verified funding manifests.
-5. A funding plan allocates support across the verified dependency graph.
-6. Receipts provide transparent proof of what was funded.
+```bash
+node dist/src/cli.js init
+node dist/src/cli.js validate examples/thank.yaml
+node dist/src/cli.js commit examples/thank.yaml
+node dist/src/cli.js scan examples/sample-project
+node dist/src/cli.js graph examples/sample-project --amount 1000 --currency USDC
+node dist/src/cli.js fund examples/sample-project --amount 1000 --currency USDC
+node dist/src/cli.js badge examples/thank.yaml
+node dist/src/cli.js verify examples/thank.yaml
+```
+
+### Deterministic Commitments
+
+`thank commit` creates deterministic protocol identifiers:
+
+```text
+projectId = sha256("thank:v1:project:" + lowercase(owner/repo))
+manifestHash = sha256(canonicalManifestJson + "\n")
+```
+
+Example:
+
+```bash
+node dist/src/cli.js commit examples/thank.yaml
+```
 
 ## Example Manifest
 
@@ -89,33 +133,117 @@ verification:
   dns_txt: optional
 ```
 
+See [docs/manifest-spec.md](docs/manifest-spec.md) for validation rules.
+
+## Dependency Scanner
+
+The scanner currently supports:
+
+```text
+package.json
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+requirements.txt
+pyproject.toml
+Cargo.toml
+Cargo.lock
+go.mod
+composer.json
+Gemfile
+pom.xml
+*.csproj
+Dockerfile
+.github/workflows/*.yml
+```
+
+Funding plans aggregate by verified upstream repository. If `react` and `react-dom` both resolve to `facebook/react`, the plan creates one allocation for `facebook/react` with combined weight.
+
+## Contracts
+
+Contracts live in [contracts/src](contracts/src).
+
+- `ProjectRegistry.sol`: maps project IDs to repository metadata, manifest hashes, controllers, and verification levels.
+- `SplitRegistry.sol`: stores split rules for active, verified projects and reads controller authority from `ProjectRegistry`.
+- `ThankRouter.sol`: queues native ETH or ERC-20 claimable credits according to registered splits.
+- `ReceiptNFT.sol`: optional non-transferable symbolic support receipt.
+- `Treasury.sol`: minimal treasury custody contract.
+
+Compile contracts:
+
+```bash
+npm run compile:contracts
+```
+
+The compiler target is pinned to `evmVersion: "shanghai"`. Changing the EVM target requires rerunning behavior tests against the intended deployment hardfork.
+
+## Protocol Invariants
+
+- No native token is required for v1.
+- Payments use existing assets such as ETH, USDC, and DAI.
+- Split totals must equal `10_000` basis points.
+- Split recipients cannot be duplicated.
+- Split updates require an active, verified project.
+- Split authority comes from `ProjectRegistry`, not a separate controller map.
+- Router funding uses claimable credits, so one reverting recipient cannot block a funding transaction.
+- Token funding measures actual inbound balance delta before allocating credits.
+- Receipts are proof-of-support artifacts, not transferable investment claims.
+
+See [docs/protocol-spec.md](docs/protocol-spec.md) and [docs/threat-model.md](docs/threat-model.md).
+
+## Tests
+
+```bash
+npm test
+```
+
+The test suite covers:
+
+- Manifest validation
+- Dependency scanning
+- Funding-plan aggregation
+- Manifest commitments
+- Solidity compile surface
+- EVM behavior for native routing, ERC-20 routing, claims, duplicate split rejection, controller authorization, unverified projects, and deactivated projects
+
+## Repository Map
+
+```text
+contracts/       Solidity protocol contracts
+docs/            Protocol, scanner, CLI, manifest, and threat-model docs
+examples/        Example manifest and sample project
+registry/        Static verified project registry
+scripts/         Contract compiler script
+src/cli.ts       CLI entrypoint
+src/lib/         Shared protocol, scanner, registry, graph, and manifest logic
+tests/           Unit and EVM behavior tests
+```
+
 ## Principles
 
 - No ICO
 - No pre-mine
 - No founder token allocation
 - No price promises
-- No paid hype campaign
 - No referral rewards
-- Open-source from day one
+- No exchange-listing hype
+- Open source from day one
 - Auditable contracts
 - Transparent funding flows
 - Maintainer-first governance
 
-## Repository Map
+## Support
+
+Donations support development, documentation, audits, testing, and infrastructure.
+
+BTC donations:
 
 ```text
-contracts/             Solidity starter contracts and compile output
-docs/                  Manifest, CLI, scanner, and protocol documentation
-examples/              Example manifest and sample project to scan
-registry/              Static verified project registry
-scripts/               Data generation and contract compile helpers
-src/app/               React dashboard
-src/lib/               Shared TypeScript protocol libraries
-src/cli.ts             CLI entrypoint
-tests/                 Unit tests
+bc1q0m7qw44q5twntp6hu92uaz8m7yqj6qqra4y05e
 ```
 
-## Current Status
+Donations do not buy tokens, equity, governance power, special access, or any expectation of financial return.
 
-Phase 0/1 protocol MVP. The CLI, manifest commitments, scanner, registry, and contracts are local-first. Smart contracts are starter contracts intended for testnet experimentation after external review. Do not use these contracts with production funds until audited.
+## License
+
+MIT
