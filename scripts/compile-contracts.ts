@@ -21,6 +21,7 @@ const input = {
   language: "Solidity",
   sources,
   settings: {
+    evmVersion: "shanghai",
     optimizer: {
       enabled: true,
       runs: 200

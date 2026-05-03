@@ -24,6 +24,7 @@ describe("contract surface", () => {
           language: "Solidity",
           sources,
           settings: {
+            evmVersion: "shanghai",
             outputSelection: {
               "*": {
                 "*": ["abi"]

@@ -76,6 +76,12 @@ Funding flow:
 
 This avoids a failure mode where one reverting recipient blocks the entire funding transaction.
 
+## EVM Target
+
+THANK v1 starter contracts are compiled with `evmVersion: "shanghai"`. The target is explicit so CI and testnet bytecode do not silently pick up newer opcodes that are unsupported on a selected L2 or test VM.
+
+Changing the EVM target requires rerunning router behavior tests against the intended chain hardfork.
+
 ## Token Rules
 
 The router uses low-level SafeERC20-style calls for non-standard tokens that return no boolean. For token funding, it measures actual tokens received by comparing router balances before and after `transferFrom`.

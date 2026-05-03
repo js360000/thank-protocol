@@ -17,3 +17,5 @@ Compile locally:
 ```bash
 npm run compile:contracts
 ```
+
+The compiler script pins `evmVersion` to `shanghai`. Do not change the target without rerunning EVM behavior tests against the intended deployment chain hardfork.
