@@ -3,7 +3,7 @@
 These contracts are starter contracts for testnet experimentation:
 
 - `ProjectRegistry.sol`: maps project IDs to repository metadata and controllers.
-- `SplitRegistry.sol`: stores recipient split rules in basis points.
+- `SplitRegistry.sol`: stores recipient split rules in basis points for active, verified projects from `ProjectRegistry`.
 - `ThankRouter.sol`: queues native ETH or ERC-20 claimable credits according to registered splits.
 - `ReceiptNFT.sol`: mints symbolic non-transferable support receipts.
 - `Treasury.sol`: receives protocol funds and allows owner withdrawals.

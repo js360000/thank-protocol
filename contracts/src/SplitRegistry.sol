@@ -3,9 +3,24 @@ pragma solidity ^0.8.24;
 
 import "./Owned.sol";
 
+interface IProjectRegistry {
+    struct Project {
+        string repo;
+        string manifestUri;
+        bytes32 manifestHash;
+        address controller;
+        uint8 verificationLevel;
+        bool active;
+    }
+
+    function getProject(bytes32 projectId) external view returns (Project memory);
+}
+
 contract SplitRegistry is Owned {
     uint256 public constant BPS_DENOMINATOR = 10_000;
     uint256 public constant MAX_RECIPIENTS = 64;
+
+    IProjectRegistry public immutable projectRegistry;
 
     struct Split {
         address payable recipient;
@@ -13,9 +28,7 @@ contract SplitRegistry is Owned {
     }
 
     mapping(bytes32 => Split[]) private projectSplits;
-    mapping(bytes32 => address) public projectController;
 
-    event ControllerSet(bytes32 indexed projectId, address indexed controller);
     event SplitsSet(bytes32 indexed projectId, uint256 recipientCount, uint256 totalBasisPoints);
 
     error NotController();
@@ -25,26 +38,25 @@ contract SplitRegistry is Owned {
     error InvalidProjectId();
     error InvalidBasisPoints();
     error DuplicateRecipient();
+    error InvalidProjectRegistry();
+    error ProjectNotVerified();
 
-    constructor(address initialOwner) Owned(initialOwner) {}
-
-    function setController(bytes32 projectId, address controller) external onlyOwner {
-        if (projectId == bytes32(0)) {
-            revert InvalidProjectId();
+    constructor(address initialOwner, IProjectRegistry registry) Owned(initialOwner) {
+        if (address(registry) == address(0)) {
+            revert InvalidProjectRegistry();
         }
-        if (controller == address(0)) {
-            revert ZeroAddress();
-        }
-        projectController[projectId] = controller;
-        emit ControllerSet(projectId, controller);
+        projectRegistry = registry;
     }
 
     function setSplits(bytes32 projectId, Split[] calldata splits) external {
         if (projectId == bytes32(0)) {
             revert InvalidProjectId();
         }
-        address controller = projectController[projectId];
-        if (msg.sender != owner && msg.sender != controller) {
+        IProjectRegistry.Project memory project = projectRegistry.getProject(projectId);
+        if (project.verificationLevel == 0) {
+            revert ProjectNotVerified();
+        }
+        if (msg.sender != owner && msg.sender != project.controller) {
             revert NotController();
         }
         if (splits.length == 0) {

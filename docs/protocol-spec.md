@@ -43,18 +43,20 @@ Only verified projects should receive automatic protocol-routed funds. Unverifie
 
 ## Split Rules
 
-`SplitRegistry` stores project recipients in basis points.
+`SplitRegistry` stores project recipients in basis points. It is backed by `ProjectRegistry`; split updates are only valid for active projects whose verification level is greater than zero.
 
 Protocol invariants:
 
 - `projectId != 0`
+- project must be active in `ProjectRegistry`
+- project must have `verificationLevel > 0`
 - recipient count is between `1` and `64`
 - each recipient is nonzero
 - each recipient has nonzero basis points
 - recipients cannot be duplicated
 - total basis points must equal `10_000`
 
-Controllers can update splits only after the owner sets a project controller. This keeps early governance boring and explicit.
+The project owner or the controller recorded in `ProjectRegistry` can update splits. There is no second controller map in `SplitRegistry`, so split authorization cannot drift from project verification metadata.
 
 ## Funding Destination Semantics
 

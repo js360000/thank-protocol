@@ -27,6 +27,8 @@ const recipientAKey = hexToBytes("0x40000000000000000000000000000000000000000000
 const recipientBKey = hexToBytes("0x5000000000000000000000000000000000000000000000000000000000000005");
 
 const projectId = "0x1111111111111111111111111111111111111111111111111111111111111111";
+const unverifiedProjectId = "0x2222222222222222222222222222222222222222222222222222222222222222";
+const manifestHash = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const oneEther = 1_000_000_000_000_000_000n;
 
 describe("ThankRouter EVM behavior", () => {
@@ -39,9 +41,7 @@ describe("ThankRouter EVM behavior", () => {
   });
 
   it("queues native credits and lets any caller claim for a recipient", async () => {
-    const splitRegistry = await harness.deploy("SplitRegistry.sol", "SplitRegistry", [
-      harness.ownerAddress
-    ]);
+    const { splitRegistry } = await harness.deployRegisteredProtocol();
     const router = await harness.deploy("ThankRouter.sol", "ThankRouter", [splitRegistry.address]);
 
     await harness.send(splitRegistry, "setSplits", [
@@ -73,9 +73,7 @@ describe("ThankRouter EVM behavior", () => {
   });
 
   it("queues ERC-20 credits and transfers tokens on claim", async () => {
-    const splitRegistry = await harness.deploy("SplitRegistry.sol", "SplitRegistry", [
-      harness.ownerAddress
-    ]);
+    const { splitRegistry } = await harness.deployRegisteredProtocol();
     const router = await harness.deploy("ThankRouter.sol", "ThankRouter", [splitRegistry.address]);
     const token = await harness.deploy("TestToken.sol", "TestToken", [
       harness.donorAddress,
@@ -112,9 +110,7 @@ describe("ThankRouter EVM behavior", () => {
   });
 
   it("does not let a reverting recipient block the funding transaction", async () => {
-    const splitRegistry = await harness.deploy("SplitRegistry.sol", "SplitRegistry", [
-      harness.ownerAddress
-    ]);
+    const { splitRegistry } = await harness.deployRegisteredProtocol();
     const router = await harness.deploy("ThankRouter.sol", "ThankRouter", [splitRegistry.address]);
     const revertingRecipient = await harness.deploy("RevertingRecipient.sol", "RevertingRecipient");
 
@@ -141,9 +137,7 @@ describe("ThankRouter EVM behavior", () => {
   });
 
   it("rejects duplicate split recipients", async () => {
-    const splitRegistry = await harness.deploy("SplitRegistry.sol", "SplitRegistry", [
-      harness.ownerAddress
-    ]);
+    const { splitRegistry } = await harness.deployRegisteredProtocol();
 
     await expect(
       harness.send(splitRegistry, "setSplits", [
@@ -151,6 +145,87 @@ describe("ThankRouter EVM behavior", () => {
         [
           { recipient: harness.recipientAAddress, basisPoints: 5000 },
           { recipient: harness.recipientAAddress, basisPoints: 5000 }
+        ]
+      ])
+    ).rejects.toThrow("execution reverted");
+  });
+
+  it("allows the registered project controller to update splits", async () => {
+    const { splitRegistry } = await harness.deployRegisteredProtocol();
+
+    await harness.send(splitRegistry, "setSplits", [
+      projectId,
+      [
+        { recipient: harness.recipientAAddress, basisPoints: 6000 },
+        { recipient: harness.recipientBAddress, basisPoints: 4000 }
+      ]
+    ], { privateKey: donorKey });
+
+    const splits = await harness.read(splitRegistry, "getSplits", [projectId]);
+
+    expect(
+      (splits as Array<{ recipient: string; basisPoints: number }>).map((split) => ({
+        recipient: split.recipient.toLowerCase(),
+        basisPoints: split.basisPoints
+      }))
+    ).toEqual([
+      { recipient: harness.recipientAAddress, basisPoints: 6000 },
+      { recipient: harness.recipientBAddress, basisPoints: 4000 }
+    ]);
+  });
+
+  it("rejects split updates from non-controllers", async () => {
+    const { splitRegistry } = await harness.deployRegisteredProtocol();
+
+    await expect(
+      harness.send(splitRegistry, "setSplits", [
+        projectId,
+        [
+          { recipient: harness.recipientAAddress, basisPoints: 6000 },
+          { recipient: harness.recipientBAddress, basisPoints: 4000 }
+        ]
+      ], { privateKey: claimerKey })
+    ).rejects.toThrow("execution reverted");
+  });
+
+  it("rejects splits for unverified or deactivated projects", async () => {
+    const projectRegistry = await harness.deploy("ProjectRegistry.sol", "ProjectRegistry", [
+      harness.ownerAddress
+    ]);
+    const splitRegistry = await harness.deploy("SplitRegistry.sol", "SplitRegistry", [
+      harness.ownerAddress,
+      projectRegistry.address
+    ]);
+
+    await harness.registerProject(projectRegistry, unverifiedProjectId, {
+      repo: "thank-protocol/unverified",
+      controller: harness.donorAddress,
+      verificationLevel: 0
+    });
+
+    await expect(
+      harness.send(splitRegistry, "setSplits", [
+        unverifiedProjectId,
+        [
+          { recipient: harness.recipientAAddress, basisPoints: 6000 },
+          { recipient: harness.recipientBAddress, basisPoints: 4000 }
+        ]
+      ])
+    ).rejects.toThrow("execution reverted");
+
+    await harness.registerProject(projectRegistry, projectId, {
+      repo: "thank-protocol/deactivated",
+      controller: harness.donorAddress,
+      verificationLevel: 1
+    });
+    await harness.send(projectRegistry, "deactivateProject", [projectId]);
+
+    await expect(
+      harness.send(splitRegistry, "setSplits", [
+        projectId,
+        [
+          { recipient: harness.recipientAAddress, basisPoints: 6000 },
+          { recipient: harness.recipientBAddress, basisPoints: 4000 }
         ]
       ])
     ).rejects.toThrow("execution reverted");
@@ -209,6 +284,39 @@ describe("ThankRouter EVM behavior", () => {
         ...contract,
         address: result.createdAddress.toString()
       };
+    }
+
+    async deployRegisteredProtocol() {
+      const projectRegistry = await this.deploy("ProjectRegistry.sol", "ProjectRegistry", [
+        this.ownerAddress
+      ]);
+      const splitRegistry = await this.deploy("SplitRegistry.sol", "SplitRegistry", [
+        this.ownerAddress,
+        projectRegistry.address
+      ]);
+
+      await this.registerProject(projectRegistry, projectId, {
+        repo: "thank-protocol/example",
+        controller: this.donorAddress,
+        verificationLevel: 1
+      });
+
+      return { projectRegistry, splitRegistry };
+    }
+
+    async registerProject(
+      projectRegistry: DeployedContract,
+      id: string,
+      options: { repo: string; controller: string; verificationLevel: number }
+    ) {
+      await this.send(projectRegistry, "registerProject", [
+        id,
+        options.repo,
+        `https://github.com/${options.repo}/blob/main/thank.yaml`,
+        manifestHash,
+        options.controller,
+        options.verificationLevel
+      ]);
     }
 
     async send(

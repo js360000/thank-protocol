@@ -51,6 +51,7 @@ Mitigations:
 
 - Encourage multisig controllers.
 - Emit `SplitsSet` events.
+- Read split authority from `ProjectRegistry` so controller metadata cannot drift across registries.
 - Add dashboard and CLI warnings for recent split changes before mainnet beta.
 - Use time delays for future production governance.
 
