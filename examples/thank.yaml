@@ -1,0 +1,44 @@
+version: 1
+
+project:
+  name: thank-example-library
+  repo: thank-protocol/example-library
+  website: https://thank.dev
+  description: Example open-source library using THANK Protocol.
+
+wallets:
+  primary:
+    address: "0x0000000000000000000000000000000000000000"
+    chains:
+      - ethereum
+      - base
+      - optimism
+      - arbitrum
+
+maintainers:
+  - github: alice
+    share: 60
+    wallet: "0x1111111111111111111111111111111111111111"
+  - github: bob
+    share: 40
+    wallet: "0x2222222222222222222222222222222222222222"
+
+splits:
+  maintainers: 80
+  upstream: 19.5
+  protocol: 0.5
+
+upstream:
+  - repo: vitejs/vite
+    share: 7
+  - repo: pallets/flask
+    share: 5
+  - repo: tokio-rs/tokio
+    share: 4
+  - repo: actions/checkout
+    share: 3.5
+
+verification:
+  github: required
+  signed_commit: optional
+  dns_txt: optional

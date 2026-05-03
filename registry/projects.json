@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-05-03T00:00:00.000Z",
+  "projects": [
+    {
+      "repo": "vitejs/vite",
+      "name": "Vite",
+      "description": "Frontend build tooling used by modern web applications.",
+      "website": "https://vite.dev",
+      "verificationLevel": 4,
+      "manifest": "https://github.com/vitejs/vite/blob/main/thank.yaml",
+      "wallet": "0x3333333333333333333333333333333333333333",
+      "packages": ["npm:vite"],
+      "maintainers": ["vitejs"],
+      "funding": {
+        "receivedUsd": 18420,
+        "upstreamFundedUsd": 4210,
+        "dependenciesSupported": 36,
+        "lastPayment": "2026-05-01"
+      }
+    },
+    {
+      "repo": "facebook/react",
+      "name": "React",
+      "description": "UI library for building component-driven applications.",
+      "website": "https://react.dev",
+      "verificationLevel": 3,
+      "manifest": "https://github.com/facebook/react/blob/main/thank.yaml",
+      "wallet": "0x4444444444444444444444444444444444444444",
+      "packages": ["npm:react", "npm:react-dom"],
+      "maintainers": ["reactjs"],
+      "funding": {
+        "receivedUsd": 26400,
+        "upstreamFundedUsd": 5900,
+        "dependenciesSupported": 52,
+        "lastPayment": "2026-04-29"
+      }
+    },
+    {
+      "repo": "pallets/flask",
+      "name": "Flask",
+      "description": "Python web framework used by services and internal tools.",
+      "website": "https://flask.palletsprojects.com",
+      "verificationLevel": 3,
+      "manifest": "https://github.com/pallets/flask/blob/main/thank.yaml",
+      "wallet": "0x5555555555555555555555555555555555555555",
+      "packages": ["pypi:flask"],
+      "maintainers": ["pallets"],
+      "funding": {
+        "receivedUsd": 9450,
+        "upstreamFundedUsd": 1880,
+        "dependenciesSupported": 18,
+        "lastPayment": "2026-04-23"
+      }
+    },
+    {
+      "repo": "tokio-rs/tokio",
+      "name": "Tokio",
+      "description": "Asynchronous runtime for Rust services.",
+      "website": "https://tokio.rs",
+      "verificationLevel": 3,
+      "manifest": "https://github.com/tokio-rs/tokio/blob/main/thank.yaml",
+      "wallet": "0x6666666666666666666666666666666666666666",
+      "packages": ["cargo:tokio"],
+      "maintainers": ["tokio-rs"],
+      "funding": {
+        "receivedUsd": 12120,
+        "upstreamFundedUsd": 2540,
+        "dependenciesSupported": 27,
+        "lastPayment": "2026-04-25"
+      }
+    },
+    {
+      "repo": "gin-gonic/gin",
+      "name": "Gin",
+      "description": "HTTP web framework for Go applications.",
+      "website": "https://gin-gonic.com",
+      "verificationLevel": 2,
+      "manifest": "https://github.com/gin-gonic/gin/blob/master/thank.yaml",
+      "wallet": "0x7777777777777777777777777777777777777777",
+      "packages": ["go:github.com/gin-gonic/gin"],
+      "maintainers": ["gin-gonic"],
+      "funding": {
+        "receivedUsd": 6240,
+        "upstreamFundedUsd": 910,
+        "dependenciesSupported": 11,
+        "lastPayment": "2026-04-20"
+      }
+    },
+    {
+      "repo": "actions/checkout",
+      "name": "Checkout Action",
+      "description": "GitHub Action used by CI workflows to fetch repositories.",
+      "website": "https://github.com/actions/checkout",
+      "verificationLevel": 2,
+      "manifest": "https://github.com/actions/checkout/blob/main/thank.yaml",
+      "wallet": "0x8888888888888888888888888888888888888888",
+      "packages": ["github-action:actions/checkout@v4", "github-action:actions/checkout"],
+      "maintainers": ["actions"],
+      "funding": {
+        "receivedUsd": 3800,
+        "upstreamFundedUsd": 620,
+        "dependenciesSupported": 9,
+        "lastPayment": "2026-04-18"
+      }
+    }
+  ]
+}

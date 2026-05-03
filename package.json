@@ -1,0 +1,44 @@
+{
+  "name": "thank-protocol",
+  "version": "0.1.0",
+  "description": "Recursive funding tools for the software commons.",
+  "type": "module",
+  "bin": {
+    "thank": "./dist/src/cli.js"
+  },
+  "scripts": {
+    "build": "npm run build:cli && npm run compile:contracts",
+    "build:cli": "tsc -p tsconfig.node.json",
+    "compile:contracts": "tsx scripts/compile-contracts.ts",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit"
+  },
+  "keywords": [
+    "open-source",
+    "public-goods",
+    "funding",
+    "dependency-graph",
+    "crypto"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "commander": "^14.0.2",
+    "fast-glob": "^3.3.3",
+    "fast-xml-parser": "^5.3.2",
+    "smol-toml": "^1.4.2",
+    "table": "^6.9.0",
+    "yaml": "^2.8.2",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "solc": "^0.8.31",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  },
+  "overrides": {
+    "tmp": "^0.2.5"
+  }
+}

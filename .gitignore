@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.vite/
+public/data/dashboard.json
+contracts/artifacts/
+*.log
+.DS_Store
+
+# Local dashboard prototype. Keep the first commit protocol-only.
+index.html
+vite.config.ts
+src/app/
+public/
+scripts/generate-dashboard-data.ts
+THANK_Protocol_Concept.md
