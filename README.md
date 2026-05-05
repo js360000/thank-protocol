@@ -4,11 +4,24 @@
 
 Recursive funding for the software commons.
 
-THANK is an open-source protocol and local-first toolchain for funding the software that modern projects depend on. A project publishes a `thank.yaml` manifest, donors scan a dependency tree, verified upstream projects are resolved, and funds can be routed through auditable split rules.
+THANK is an open-source protocol and local-first toolchain for funding the software that modern projects depend on. A project publishes a `thank.yaml` manifest, maintainers prove control of the repository, donors scan a dependency tree, verified upstream projects are resolved, and funds can be routed through auditable split rules.
 
 The goal is practical public-goods funding, not speculation.
 
 THANK is experimental infrastructure. It is not an investment product. Donations do not buy tokens, equity, governance power, special access, future allocations, or any expectation of financial return.
+
+## The Niche
+
+THANK is for maintainers, companies, foundations, and open-source collectives that want auditable dependency funding without launching a token.
+
+It is deliberately narrow:
+
+- Maintainers publish a human-readable funding manifest.
+- Verification reports make ownership and payout hygiene visible before registry inclusion.
+- Donors can fund a project while routing part of the money to verified upstream dependencies.
+- Receipts and manifest commitments create a public audit trail.
+
+It is not a generic crowdfunding site, grants platform, token launch, or retroactive rewards market.
 
 ## Why THANK Exists
 
@@ -29,6 +42,7 @@ The core workflow is:
 ## What Is In This Repository
 
 - TypeScript CLI for manifests, scanning, funding plans, receipts, and commitments
+- Maintainer verification reports for manifest credibility and registry readiness
 - Multi-ecosystem dependency scanner
 - Static verified project registry
 - Solidity contracts for project registration, split registration, routing, receipts, and treasury custody
@@ -72,6 +86,7 @@ node dist/src/cli.js graph examples/sample-project --amount 1000 --currency USDC
 node dist/src/cli.js fund examples/sample-project --amount 1000 --currency USDC
 node dist/src/cli.js badge examples/thank.yaml
 node dist/src/cli.js verify examples/thank.yaml
+node dist/src/cli.js verify examples/thank.yaml --repo-url https://github.com/thank-protocol/example-library.git
 ```
 
 ### Deterministic Commitments
@@ -102,7 +117,7 @@ project:
 
 wallets:
   primary:
-    address: "0x0000000000000000000000000000000000000000"
+    address: "0x9999999999999999999999999999999999999999"
     chains:
       - ethereum
       - base
@@ -137,6 +152,17 @@ verification:
 ```
 
 See [docs/manifest-spec.md](docs/manifest-spec.md) for validation rules.
+
+## Verification
+
+`thank verify` is the credibility gate for public funding destinations. It checks manifest validity, local GitHub ownership proof, zero-address payout values, maintainer identity hygiene, upstream funding policy, optional signed commit proof, and optional DNS TXT proof.
+
+```bash
+node dist/src/cli.js verify examples/thank.yaml --repo-url https://github.com/thank-protocol/example-library.git
+node dist/src/cli.js verify examples/thank.yaml --dns --json
+```
+
+See [docs/verification.md](docs/verification.md) for verification levels, DNS TXT syntax, and registry-readiness expectations.
 
 ## Dependency Scanner
 
@@ -213,6 +239,7 @@ npm test
 The test suite covers:
 
 - Manifest validation
+- Maintainer verification reports
 - Dependency scanning
 - Funding-plan aggregation
 - Manifest commitments

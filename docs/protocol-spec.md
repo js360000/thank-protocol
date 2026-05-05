@@ -32,12 +32,14 @@ The manifest URI points to the human-readable source, usually a GitHub blob or i
 ## Verification Levels
 
 ```text
-Level 0: Unverified manifest
-Level 1: GitHub repository proof
-Level 2: Signed commit proof
-Level 3: Domain or package-registry proof
-Level 4: Multi-source verified project
+Level 0: Not verified
+Level 1: GitHub repository proof matched
+Level 2: Level 1 plus signed commit proof
+Level 3: Level 1 plus DNS TXT proof
+Level 4: Multi-source registry review
 ```
+
+The CLI-side readiness report is defined in [verification.md](verification.md). Public registries should store the full check set and proof metadata, not only the numeric `verificationLevel`.
 
 Only verified projects should receive automatic protocol-routed funds. Unverified dependencies can still be surfaced as missing funding metadata.
 

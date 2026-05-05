@@ -29,4 +29,37 @@ describe("manifest validation", () => {
     expect(result.valid).toBe(false);
     expect(result.errors.join("\n")).toContain("splits must total 100");
   });
+
+  it("rejects upstream split allocations without upstream entries", () => {
+    const result = validateManifestData(
+      createDefaultManifest({
+        upstream: []
+      })
+    );
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.join("\n")).toContain("upstream entries are required");
+  });
+
+  it("rejects duplicate maintainer GitHub handles", () => {
+    const result = validateManifestData(
+      createDefaultManifest({
+        maintainers: [
+          {
+            github: "alice",
+            share: 50,
+            wallet: "0x1111111111111111111111111111111111111111"
+          },
+          {
+            github: "Alice",
+            share: 50,
+            wallet: "0x2222222222222222222222222222222222222222"
+          }
+        ]
+      })
+    );
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.join("\n")).toContain("duplicate GitHub handles");
+  });
 });

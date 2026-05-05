@@ -28,7 +28,9 @@ A project can publish a manifest that points upstream funding to unrelated walle
 Mitigations:
 
 - Show verification level at every funding destination.
+- Run `thank verify` before registry inclusion.
 - Hash the exact verified manifest.
+- Store the full verification report, not only the numeric level.
 - Require stronger verification for high-impact projects.
 - Keep registry review auditable.
 
@@ -104,7 +106,7 @@ Mitigations:
 ## Current Residual Risks
 
 - Contracts are not audited.
-- There is no deployment script or multisig policy yet.
+- Testnet deployment tooling exists, but there is no live deployment record or multisig policy yet.
 - Registry signing is not implemented.
 - No onchain timelock exists for split changes.
 - Fee-on-transfer and rebasing tokens remain unsuitable for production support.
@@ -112,7 +114,7 @@ Mitigations:
 ## Pre-Testnet Gate
 
 - Add Foundry or Hardhat tests for authorization, split math, claims, and token edge cases.
-- Add deployment configuration for one testnet.
+- Execute and publish one testnet deployment.
 - Write a controller rotation policy.
 - Generate verified source artifacts.
 - Run Slither and resolve high-confidence findings.

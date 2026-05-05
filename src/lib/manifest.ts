@@ -100,6 +100,19 @@ export function validateManifestData(data: unknown): ManifestValidationResult {
     errors.push(`upstream contains duplicate repositories: ${duplicateRepos.join(", ")}`);
   }
 
+  if (manifest.splits.upstream > 0 && manifest.upstream.length === 0) {
+    errors.push("upstream entries are required when splits.upstream is above 0");
+  }
+
+  const duplicateMaintainers = findDuplicates(manifest.maintainers.map((maintainer) => maintainer.github.toLowerCase()));
+  if (duplicateMaintainers.length > 0) {
+    errors.push(`maintainers contains duplicate GitHub handles: ${duplicateMaintainers.join(", ")}`);
+  }
+
+  if (ethereumAddress.test(manifest.wallets.primary.address) && /^0x0{40}$/i.test(manifest.wallets.primary.address)) {
+    warnings.push("primary wallet is the zero address; replace it before public verification");
+  }
+
   if (manifest.splits.protocol > 1) {
     warnings.push("protocol split is above 1%; keep protocol fees conservative for early adoption");
   }

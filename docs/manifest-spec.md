@@ -34,17 +34,22 @@ upstream:
 - Top-level splits must total `100`.
 - Maintainer shares must total `100`.
 - Upstream shares must total `splits.upstream`.
+- `splits.upstream` above `0` requires at least one upstream entry.
 - Duplicate upstream repos are rejected.
+- Duplicate maintainer GitHub handles are rejected.
+- A zero-address primary wallet is allowed while drafting but warned against.
 - Protocol fees above `1%` are allowed but warned against.
 
 ## Verification Levels
 
 ```text
-Level 0: Unverified manifest
-Level 1: GitHub repo proof
-Level 2: Signed commit proof
-Level 3: Domain or package-registry proof
-Level 4: Multi-source verified project
+Level 0: Not verified
+Level 1: GitHub repository proof matched
+Level 2: Level 1 plus signed commit proof
+Level 3: Level 1 plus DNS TXT proof
+Level 4: Multi-source registry review
 ```
 
 User interfaces should always show verification status near funding destinations.
+
+See [verification.md](verification.md) for the `thank verify` report format and registry-readiness checks.

@@ -1,6 +1,9 @@
 #!/usr/bin/env node
+import { execFile } from "node:child_process";
+import { resolveTxt } from "node:dns/promises";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 import { Command } from "commander";
 import { table } from "table";
 import YAML from "yaml";
@@ -9,9 +12,18 @@ import { createDefaultManifest, loadManifest, writeDefaultManifest } from "./lib
 import { createManifestCommitment } from "./lib/protocol.js";
 import { loadRegistry } from "./lib/registry.js";
 import { scanProject } from "./lib/scanner.js";
+import {
+  createExpectedDnsProof,
+  createVerificationReport,
+  type DnsProofEvidence,
+  type SignedCommitEvidence,
+  type VerificationReport,
+  type VerificationStatus
+} from "./lib/verification.js";
 import type { FundingReceipt, FundingStrategy, RegistryFile, ThankManifest } from "./lib/types.js";
 
 const program = new Command();
+const execFileAsync = promisify(execFile);
 
 program
   .name("thank")
@@ -239,41 +251,50 @@ program
 
 program
   .command("verify")
-  .description("Check local GitHub repository proof for a manifest.")
+  .description("Build a maintainer trust report for a THANK manifest.")
   .argument("[manifest]", "manifest path", "thank.yaml")
+  .option("--repo-url <url>", "override the git remote URL used for GitHub ownership proof")
+  .option("--dns", "resolve and verify the manifest DNS TXT proof")
+  .option("--signed-commit", "verify a signed git commit proof")
+  .option("--commit <ref>", "git commit ref used with --signed-commit", "HEAD")
   .option("--json", "print machine-readable output")
-  .action(async (manifestPath: string, options: { json?: boolean }) => {
-    const result = await loadManifest(path.resolve(manifestPath));
-    if (!result.valid || !result.manifest) {
-      fail("Manifest is invalid. Run thank validate for details.");
-    }
-
-    const remote = await getGitRemote();
-    const expected = result.manifest.project.repo.toLowerCase();
-    const matched = remote ? normalizeGitHubRemote(remote) === expected : false;
-    const verification = {
-      manifest: result.manifest.project.repo,
-      gitRemote: remote,
-      matched,
-      level: matched ? 1 : 0
-    };
-
-    if (options.json) {
-      console.log(JSON.stringify(verification, null, 2));
-      process.exitCode = matched ? 0 : 1;
-      return;
-    }
-
-    if (matched) {
-      console.log(`GitHub repo proof matched ${result.manifest.project.repo}. Verification level: 1`);
-    } else {
-      console.log("GitHub repo proof not established from local git remote.");
-      if (remote) {
-        console.log(`Found remote: ${remote}`);
+  .action(
+    async (
+      manifestPath: string,
+      options: {
+        repoUrl?: string;
+        dns?: boolean;
+        signedCommit?: boolean;
+        commit: string;
+        json?: boolean;
       }
-      process.exitCode = 1;
+    ) => {
+      const resolvedManifestPath = path.resolve(manifestPath);
+      const result = await loadManifest(resolvedManifestPath);
+      const manifest = result.manifest;
+      const gitRemote = options.repoUrl ?? (await getGitRemote());
+      const dnsRequired = manifest?.verification?.dns_txt === "required";
+      const signedCommitRequired = manifest?.verification?.signed_commit === "required";
+      const dnsProof = manifest && (options.dns || dnsRequired) ? await lookupDnsProof(manifest) : undefined;
+      const signedCommit =
+        options.signedCommit || signedCommitRequired ? await verifySignedCommit(options.commit) : undefined;
+      const report = createVerificationReport(result, {
+        manifestPath: path.relative(process.cwd(), resolvedManifestPath),
+        gitRemote,
+        dnsProof,
+        signedCommit
+      });
+
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+        process.exitCode = report.readyForRegistry ? 0 : 1;
+        return;
+      }
+
+      printVerificationReport(report);
+      process.exitCode = report.readyForRegistry ? 0 : 1;
     }
-  });
+  );
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
@@ -330,6 +351,59 @@ function printFundingPlan(plan: ReturnType<typeof buildFundingPlan>) {
   console.log(`${plan.totals.unfundedDependencies} dependencies did not have verified funding metadata.`);
 }
 
+function printVerificationReport(report: VerificationReport) {
+  console.log(`THANK verification report for ${report.manifest.repo}`);
+  if (report.manifest.path) {
+    console.log(`Manifest: ${report.manifest.path}`);
+  }
+  if (report.gitRemote) {
+    console.log(`Git remote: ${report.gitRemote}`);
+  }
+  console.log(`Project ID: ${report.projectId}`);
+  console.log(`Manifest hash: ${report.manifestHash}`);
+  console.log(`Verification level: ${report.level}`);
+  console.log(`Registry ready: ${report.readyForRegistry ? "yes" : "no"}`);
+  console.log("");
+
+  console.log(
+    table([
+      ["Status", "Check", "Required", "Detail"],
+      ...report.checks.map((check) => [
+        formatVerificationStatus(check.status),
+        check.label,
+        check.required ? "yes" : "no",
+        check.detail
+      ])
+    ])
+  );
+
+  if (report.expectedDnsProof) {
+    console.log("DNS proof:");
+    console.log(`${report.expectedDnsProof.name} TXT "${report.expectedDnsProof.value}"`);
+    console.log("");
+  }
+
+  if (report.nextActions.length > 0) {
+    console.log("Next actions:");
+    for (const action of report.nextActions) {
+      console.log(`- ${action}`);
+    }
+  }
+}
+
+function formatVerificationStatus(status: VerificationStatus) {
+  switch (status) {
+    case "pass":
+      return "PASS";
+    case "warn":
+      return "WARN";
+    case "fail":
+      return "FAIL";
+    case "skip":
+      return "SKIP";
+  }
+}
+
 async function maybeWriteJson(target: string | undefined, value: unknown) {
   if (!target) {
     return;
@@ -371,15 +445,56 @@ async function getGitRemote() {
   }
 }
 
-function normalizeGitHubRemote(remote: string | undefined) {
-  if (!remote) {
-    return undefined;
+async function lookupDnsProof(manifest: ThankManifest): Promise<DnsProofEvidence> {
+  const expected = createExpectedDnsProof(manifest, createManifestCommitment(manifest).manifestHash);
+  if (!expected) {
+    return {
+      checked: true,
+      records: [],
+      error: "manifest has no project.website hostname"
+    };
   }
-  return remote
-    .replace(/^git@github.com:/, "")
-    .replace(/^https:\/\/github.com\//, "")
-    .replace(/\.git$/, "")
-    .toLowerCase();
+
+  try {
+    const records = (await resolveTxt(expected.name)).map((parts) => parts.join(""));
+    return {
+      checked: true,
+      recordName: expected.name,
+      records
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      checked: true,
+      recordName: expected.name,
+      records: [],
+      error: message
+    };
+  }
+}
+
+async function verifySignedCommit(commit: string): Promise<SignedCommitEvidence> {
+  try {
+    await execFileAsync("git", ["verify-commit", commit], { cwd: process.cwd() });
+    return {
+      checked: true,
+      commit,
+      verified: true
+    };
+  } catch (error) {
+    const detail =
+      typeof error === "object" && error && "stderr" in error && typeof error.stderr === "string"
+        ? error.stderr.trim()
+        : error instanceof Error
+          ? error.message
+          : String(error);
+    return {
+      checked: true,
+      commit,
+      verified: false,
+      detail: detail || `git verify-commit failed for ${commit}`
+    };
+  }
 }
 
 function fail(message: string): never {

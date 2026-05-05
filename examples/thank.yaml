@@ -8,7 +8,7 @@ project:
 
 wallets:
   primary:
-    address: "0x0000000000000000000000000000000000000000"
+    address: "0x9999999999999999999999999999999999999999"
     chains:
       - ethereum
       - base
