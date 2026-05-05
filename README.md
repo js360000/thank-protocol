@@ -52,12 +52,6 @@ The core workflow is:
 
 The local website/dashboard prototype is intentionally excluded from the protocol repo. The protocol surface is the manifest, CLI, registry, contracts, and tests.
 
-## Current Status
-
-Phase 0/1 protocol MVP.
-
-The CLI, manifest commitments, scanner, registry, and contracts are local-first. The contracts compile and have EVM behavior tests, but they have not been audited. Do not use these contracts with production funds until they have had external review, testnet proving, and a deployment policy.
-
 ## Install
 
 ```bash
