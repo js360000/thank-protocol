@@ -1,7 +1,5 @@
 # THANK Protocol
 
-[![CI](https://github.com/js360000/thank-protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/js360000/thank-protocol/actions/workflows/ci.yml)
-
 ![THANK Protocol social card](assets/promo/thank-social-card.png)
 
 Recursive funding for the software commons.
