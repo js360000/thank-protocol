@@ -145,8 +145,6 @@ verification:
   dns_txt: optional
 ```
 
-See [docs/manifest-spec.md](docs/manifest-spec.md) for validation rules.
-
 ## Verification
 
 `thank verify` is the credibility gate for public funding destinations. It checks manifest validity, local GitHub ownership proof, zero-address payout values, maintainer identity hygiene, upstream funding policy, optional signed commit proof, and optional DNS TXT proof.
@@ -155,8 +153,6 @@ See [docs/manifest-spec.md](docs/manifest-spec.md) for validation rules.
 node dist/src/cli.js verify examples/thank.yaml --repo-url https://github.com/thank-protocol/example-library.git
 node dist/src/cli.js verify examples/thank.yaml --dns --json
 ```
-
-See [docs/verification.md](docs/verification.md) for verification levels, DNS TXT syntax, and registry-readiness expectations.
 
 ## Dependency Scanner
 
@@ -208,7 +204,7 @@ Copy [.env.example](.env.example), set the target chain, RPC URL, deployer key, 
 npm run deploy:testnet
 ```
 
-Deployment manifests are written to [deployments](deployments). See [docs/testnet-deployment.md](docs/testnet-deployment.md) for the checklist and [docs/token-policy.md](docs/token-policy.md) for the recommended asset allowlist posture.
+Deployment manifests are written to [deployments](deployments).
 
 ## Protocol Invariants
 
@@ -221,8 +217,6 @@ Deployment manifests are written to [deployments](deployments). See [docs/testne
 - Router funding uses claimable credits, so one reverting recipient cannot block a funding transaction.
 - Token funding measures actual inbound balance delta before allocating credits.
 - Receipts are proof-of-support artifacts, not transferable investment claims.
-
-See [docs/protocol-spec.md](docs/protocol-spec.md) and [docs/threat-model.md](docs/threat-model.md).
 
 ## Tests
 
@@ -245,7 +239,6 @@ The test suite covers:
 ```text
 contracts/       Solidity protocol contracts
 deployments/     Public deployment records and deployment format notes
-docs/            Protocol, scanner, CLI, manifest, and threat-model docs
 examples/        Example manifest and sample project
 registry/        Static verified project registry
 scripts/         Contract compiler and deployment scripts
