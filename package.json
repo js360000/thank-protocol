@@ -10,6 +10,7 @@
     "build": "npm run build:cli && npm run compile:contracts",
     "build:cli": "tsc -p tsconfig.node.json",
     "compile:contracts": "tsx scripts/compile-contracts.ts",
+    "deploy:testnet": "npm run compile:contracts && tsx scripts/deploy-testnet.ts",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit"
   },

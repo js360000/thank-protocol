@@ -95,6 +95,8 @@ MVP restrictions:
 - Avoid fee-on-transfer tokens for production deployments.
 - Avoid assets with blocklist or pause risk unless that operational risk is disclosed.
 
+See [token-policy.md](token-policy.md) for the recommended production allowlist approach.
+
 ## Receipt Layer
 
 Receipts are event-first in the MVP:

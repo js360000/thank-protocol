@@ -1,5 +1,9 @@
 # THANK Protocol
 
+[![CI](https://github.com/js360000/thank-protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/js360000/thank-protocol/actions/workflows/ci.yml)
+
+![THANK Protocol social card](assets/promo/thank-social-card.png)
+
 Recursive funding for the software commons.
 
 THANK is an open-source protocol and local-first toolchain for funding the software that modern projects depend on. A project publishes a `thank.yaml` manifest, donors scan a dependency tree, verified upstream projects are resolved, and funds can be routed through auditable split rules.
@@ -31,6 +35,7 @@ The core workflow is:
 - Static verified project registry
 - Solidity contracts for project registration, split registration, routing, receipts, and treasury custody
 - In-process EVM behavior tests for protocol routing and claims
+- Testnet deployment script, deployment manifest format, and CI workflow
 - Protocol specification, threat model, manifest spec, security policy, and examples
 
 The local website/dashboard prototype is intentionally excluded from the protocol repo. The protocol surface is the manifest, CLI, registry, contracts, and tests.
@@ -177,6 +182,16 @@ npm run compile:contracts
 
 The compiler target is pinned to `evmVersion: "shanghai"`. Changing the EVM target requires rerunning behavior tests against the intended deployment hardfork.
 
+### Testnet Deployment
+
+Copy [.env.example](.env.example), set the target chain, RPC URL, deployer key, and optional protocol owner, then run:
+
+```bash
+npm run deploy:testnet
+```
+
+Deployment manifests are written to [deployments](deployments). See [docs/testnet-deployment.md](docs/testnet-deployment.md) for the checklist and [docs/token-policy.md](docs/token-policy.md) for the recommended asset allowlist posture.
+
 ## Protocol Invariants
 
 - No native token is required for v1.
@@ -210,14 +225,25 @@ The test suite covers:
 
 ```text
 contracts/       Solidity protocol contracts
+deployments/     Public deployment records and deployment format notes
 docs/            Protocol, scanner, CLI, manifest, and threat-model docs
 examples/        Example manifest and sample project
 registry/        Static verified project registry
-scripts/         Contract compiler script
+scripts/         Contract compiler and deployment scripts
 src/cli.ts       CLI entrypoint
 src/lib/         Shared protocol, scanner, registry, graph, and manifest logic
 tests/           Unit and EVM behavior tests
+assets/promo/    Promotional images for README, social cards, and announcements
 ```
+
+## Promotional Assets
+
+Ready-to-use protocol images live in [assets/promo](assets/promo):
+
+- `thank-social-card.png` for GitHub/social previews
+- `thank-banner.png` for project pages and announcements
+- `thank-square.png` for posts and profile surfaces
+- `thank-protocol-background.png` as the clean source background
 
 ## Principles
 
